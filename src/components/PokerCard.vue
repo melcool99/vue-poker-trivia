@@ -3,7 +3,8 @@ import { computed, defineProps } from 'vue'
 
 const props = defineProps({
   rank: String,
-  suit: String
+  suit: String,
+  showCards: Boolean
 })
 
 const suitSymbol = computed(() => {
@@ -33,8 +34,8 @@ const suitClass = computed(() => {
 
 <template>
   <div :class="suitClass" class="poker-card">
-    <div class="poker-card__rank">{{ rank }}</div>
-    <div class="poker-card__suit">{{ suitSymbol }}</div>
+    <div class="poker-card-rank">{{ rank }}</div>
+    <div class="poker-card-suit">{{ suitSymbol }}</div>
   </div>
 </template>
 
@@ -44,7 +45,7 @@ const suitClass = computed(() => {
   box-shadow: 0 0 5px var(--dark-color);
   border-radius: 5px;
   width: 60px;
-  height: 90px;
+  height: 100px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -53,11 +54,11 @@ const suitClass = computed(() => {
   margin: 0 5px;
 }
 
-.poker-card__rank {
+.poker-card-rank {
   font-size: 60px;
 }
 
-.poker-card__suit {
+.poker-card-suit {
   font-size: 40px;
 }
 

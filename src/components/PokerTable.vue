@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import PokerCard from './PokerCard.vue'
 
-const props = defineProps({
+defineProps({
   playerCards: Array<{ suit: String; rank: String }>,
   communityCards: Array<{ suit: String; rank: String }>
 })
