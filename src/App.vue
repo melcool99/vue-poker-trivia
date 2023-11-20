@@ -12,29 +12,30 @@ const suits = ['H', 'D', 'C', 'S']
 const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
 const deck = ref<any>([])
 
-const handValues = ref([
-  'High Card',
-  'Pair',
-  'Two Pair',
-  'Three of a Kind',
-  'Straight',
-  'Flush',
-  'Full House',
-  'Four of a Kind',
-  'Straight Flush',
-  'Royal Flush'
-])
-
-const VALUE = 'Royal Flush'
+enum HandValues {
+  HighCard = 'High Card',
+  Pair = 'Pair',
+  TwoPair = 'Two Pair',
+  ThreeOfAKind = 'Three of a Kind',
+  Straight = 'Straight',
+  Flush = 'Flush',
+  FullHouse = 'Full House',
+  FourOfAKind = 'Four of a Kind',
+  StraightFlush = 'Straight Flush',
+  RoyalFlush = 'Royal Flush'
+}
+const handValue = ref<string>('')
 const points = ref(10)
 const isAnswered = ref(false)
-const timerSeconds = ref(10)
-const intervalStep = ref(1000)
+const timerSeconds = ref<number>(10)
 const answerType = ref<null | boolean>(null)
 const showModal = ref(true)
+const showModal2 = ref(false)
 let startTime = ref<any | number>(null)
-let totalTime = ref<null | number>(null)
+let totalTime = ref<any | number>(null)
 let intervalId: any = null
+let roundNumber = ref<number>(0)
+const apiData = ref<any>(null)
 
 const createDeck = () => {
   for (const suit of suits) {
@@ -52,34 +53,34 @@ const shuffleDeck = () => {
 }
 
 const dealCards = () => {
-  playerCards.value = deck.value.splice(0, 2)
-  deck.value.splice(0, 1)
-  communityCards.value = deck.value.splice(0, 3)
-  deck.value.splice(0, 1)
-  communityCards.value.push(...deck.value.splice(0, 1))
-  deck.value.splice(0, 1)
-  communityCards.value.push(...deck.value.splice(0, 1))
+  const deckCopy = [...deck.value]
+  playerCards.value = deckCopy.splice(0, 2)
+  deckCopy.splice(0, 1)
+  communityCards.value = deckCopy.splice(0, 3)
+  deckCopy.splice(0, 1)
+  communityCards.value.push(...deckCopy.splice(0, 1))
+  deckCopy.splice(0, 1)
+  communityCards.value.push(...deckCopy.splice(0, 1))
 }
 
 const getBestHand = () => {
   const allCards = [...playerCards.value, ...communityCards.value]
-  const hand = allCards.map((card) => `${card.rank}${card.suit[0].toLowerCase()}`)
-  // const result = PokerSolver.Hand.solve(hand)
+
+  const hands = allCards.map((card) => `${card.rank}${card.suit[0].toLowerCase()}`)
+  handValue.value = PokerSolver.Hand.solve(hands).name
 }
 
 const handleAnswer = (value: String) => {
   isAnswered.value = true
   clearInterval(intervalId)
 
-  if (value && value === VALUE) {
+  if (handValue.value && value === handValue.value) {
     answerType.value = true
     points.value += 1
   } else {
     answerType.value = false
     points.value -= points.value >= 3 ? 3 : points.value
   }
-  intervalStep.value = intervalStep.value - 10
-  setTimeout(restartRound, 1000)
 }
 
 const startGame = () => {
@@ -88,7 +89,13 @@ const startGame = () => {
   points.value = 10
   timerSeconds.value = 10
   createDeck()
-  startRound()
+  shuffleDeck()
+  dealCards()
+  getBestHand()
+
+  if (handValue.value) {
+    startRound()
+  }
 }
 
 const checkPoints = () => {
@@ -107,30 +114,55 @@ const checkPoints = () => {
 
 watch(points, checkPoints)
 
+watch(timerSeconds, (newValue) => {
+  if (timerSeconds.value <= 0) {
+    totalTime.value = Date.now() - startTime.value
+    let timeInSeconds = totalTime.value / 1000
+    let minutes = Math.floor(timeInSeconds / 60)
+    let seconds = Math.floor(timeInSeconds % 60)
+    alert(`Time spent: ${minutes} minutes and ${seconds} seconds`)
+    clearInterval(intervalId)
+  }
+})
+
+async function fetchData() {
+  const randomNumber = Math.floor(Math.random() * 200) + 1
+  const url = `https://jsonplaceholder.typicode.com/todos/${randomNumber}`
+  try {
+    const response = await fetch(url)
+
+    apiData.value = await response.json()
+    showModal2.value = true
+  } catch (error) {
+    console.error(error)
+  }
+}
+
 const startRound = () => {
   isAnswered.value = false
-
   shuffleDeck()
   dealCards()
   getBestHand()
-  intervalId = setInterval(() => {
-    if (timerSeconds.value > 0) {
-      timerSeconds.value--
-    } else {
-      points.value -= points.value >= 3 ? 3 : points.value
+  let timer = timerSeconds.value
 
-      clearInterval(intervalId)
-      setTimeout(restartRound, 1000)
-    }
-    intervalStep.value = intervalStep.value - 10
-  }, intervalStep.value)
+  if (handValue.value) {
+    intervalId = setInterval(() => {
+      if (timer > 0) {
+        timer--
+      } else {
+        points.value -= points.value >= 3 ? 3 : points.value
+        clearInterval(intervalId)
+      }
+    }, 1000)
+  }
 }
 
 const restartRound = () => {
+  showModal2.value = false
   if (points.value > 0) {
     clearInterval(intervalId)
-    timerSeconds.value = 10
-    intervalStep.value = 1000
+    roundNumber.value = roundNumber.value + 1
+    timerSeconds.value = 10 - roundNumber.value
     isAnswered.value = false
     startRound()
   }
@@ -138,11 +170,19 @@ const restartRound = () => {
 </script>
 
 <template>
+  <StartModal v-model="showModal2" v-if="showModal2">
+    <h2 class="">{{ apiData.title }}</h2>
+    <button class="btn" @click="restartRound">Continue</button>
+  </StartModal>
   <StartModal v-model="showModal" v-if="showModal">
-    <h2 class="">Start a new game?</h2>
+    <h2>Start a new game?</h2>
     <button class="btn" @click="startGame">Start</button>
   </StartModal>
-  <main class="container" :class="!timerSeconds && 'incorrect-answer'" v-else>
+  <main
+    class="container"
+    :class="!timerSeconds && 'incorrect-answer'"
+    v-if="!showModal2 || showModal"
+  >
     <section class="info-data">
       <p class="points">Stamina: {{ points }}</p>
       <p class="timer">Timer: {{ timerSeconds }}</p>
@@ -156,7 +196,7 @@ const restartRound = () => {
             'correct-answer': isAnswered && answerType,
             'incorrect-answer': isAnswered && !answerType
           }"
-          v-for="(value, index) in handValues"
+          v-for="(value, index) in HandValues"
           :key="index"
           @click="handleAnswer(value)"
           :disabled="!timerSeconds || isAnswered"

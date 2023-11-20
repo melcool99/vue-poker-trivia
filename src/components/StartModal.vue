@@ -31,6 +31,9 @@ const closeModal = () => {
 }
 
 .modal-content {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
   background: white;
   padding: 20px;
   border-radius: 10px;
@@ -38,6 +41,5 @@ const closeModal = () => {
   font-weight: bold;
   margin: 10px 0;
   color: var(--dark-color);
-  align-self: center;
 }
 </style>
