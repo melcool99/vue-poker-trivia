@@ -1,9 +1,10 @@
 <script lang="ts" setup>
+import type { Card } from '@/App.vue'
 import PokerCard from './PokerCard.vue'
 
 defineProps({
-  playerCards: Array<{ suit: String; rank: String }>,
-  communityCards: Array<{ suit: String; rank: String }>
+  playerCards: Array<Card>,
+  communityCards: Array<Card>
 })
 </script>
 
